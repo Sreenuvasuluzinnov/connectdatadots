@@ -23,6 +23,31 @@ def get_line_data_points(data, timeline):
     return data
 
 
+def get_line_data_points_deep(deep_data, timeline):
+    data = {obj["name_of_table"]: [] for obj in deep_data}
+    for line_data_points_obj in deep_data:
+        df_data = line_data_points_obj.pop("month")
+        if timeline == "day" or timeline == "30days":
+            line_data_points_obj["label"] = str(df_data)
+        elif timeline == "month":
+            line_data_points_obj["label"] = "-".join([df_data.strftime('%Y'), df_data.strftime("%B")])
+            line_data_points_obj["label"] = "-".join([df_data.strftime('%Y'), df_data.strftime("%B")])
+        elif timeline == "year":
+            line_data_points_obj["label"] = str(df_data.year)
+        line_data_points_obj["org_val"] = df_data
+        data[line_data_points_obj["name_of_table"]].append(line_data_points_obj)
+    final_data = []
+    for key in data.keys():
+        data_obj = data[key]
+        data_obj.sort(key=lambda x: x['org_val'])
+        for obj in data_obj:
+            obj.pop("org_val", None)
+        final_data_obj = {"type": "line", "name": key, "showInLegend": True, "axisYType": "secondary",
+                          "markerSize": 0, "dataPoints": data_obj}
+        final_data.append(final_data_obj)
+    return final_data
+
+
 def get_accounts_data(days, type):
     pie_data_points = TotalStats.objects.filter(category="accounts", date_created__gte=days)\
         .values(indexLabel=F('name_of_table')).annotate(y=Sum('create_count'))
@@ -39,7 +64,14 @@ def get_accounts_data(days, type):
     line_data_points = get_line_data_points(line_data_points, type)
     for line_data_points_obj in line_data_points:
         line_data_points_obj.pop("org_val", None)
-    return {"pie_data_points": pie_data_points, "line_data_points": line_data_points}
+
+    line_data_points_deep = TotalStats.objects.filter(category="accounts", date_created__gte=days).annotate(month=func('date_created')).values('month', 'name_of_table') \
+                            .annotate(y=Sum('create_count'))
+    print(line_data_points_deep)
+    line_data_points_deep = get_line_data_points_deep(line_data_points_deep, type)
+
+    return {"pie_data_points": pie_data_points, "line_data_points": line_data_points,
+            "multiline_points": line_data_points_deep}
 
 
 def index(request):
