@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Index</title>
+    <style>
+        .canvasjs-chart-credit{
+        display:none
+        }
+    </style>
+</head>
+<script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+<h1 style="color:blue;"><b><u>Accounts Data</u></b>
+<select style="width:200px;float:right;height:30px;margin-right:20%;" onchange="this.options[this.selectedIndex].value && (window.location = this.options[this.selectedIndex].value);">
+    <option value="">select</option>
+    <option value="http://localhost:8000/app/v1.0/index/?timeline=week">last week</option>
+    <option value="http://localhost:8000/app/v1.0/index/?timeline=30days">last 30 days</option>
+    <option value="http://localhost:8000/app/v1.0/index/?timeline=month">month wise</option>
+    <option value="http://localhost:8000/app/v1.0/index/?timeline=year">year wise</option>
+</select>
+</h1>
+
+<div id="chartContainer" style="width: 45%; height: 300px;display: inline-block;"></div>
+<div id="chartContainer2" style="width: 45%; height: 300px;display: inline-block;"></div>
+<body>
+<!--<h2>Welcome to Django!!!</h2>-->
+<!--<h3>My Name is: {{ data_points }}</h3>-->
+</body>
+{% load js %}
+<script type="text/javascript">
+    var line_data_points_js = {{ line_data_points | js }};
+    var pie_data_points_js = {{ pie_data_points | js }};
+
+
+var chart = new CanvasJS.Chart("chartContainer",
+    {
+        animationEnabled: true,
+        title: {
+            text: "Line Chart"
+        },
+        credits: { enabled:false},
+        axisX: {
+            valueFormatString: "MMM",
+            interval: 1,
+            intervalType: "month"
+        },
+        axisY: {
+            includeZero: false
+        },
+        data: [
+        {
+          type: "line",
+          dataPoints: line_data_points_js
+        }
+        ]
+    });
+chart.render();
+
+var chart = new CanvasJS.Chart("chartContainer2",
+    {
+        animationEnabled: true,
+        title: {
+            text: "Pie Chart",
+        },
+        credits: { enabled:false},
+        data: [
+        {
+            type: "pie",
+            showInLegend: true,
+            dataPoints: pie_data_points_js
+        },
+        ]
+    });
+chart.render();
+
+</script>
+</html>
