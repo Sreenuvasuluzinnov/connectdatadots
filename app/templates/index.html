@@ -22,7 +22,9 @@
 
 <div id="chartContainer" style="width: 45%; height: 300px;display: inline-block;"></div>
 <div id="chartContainer2" style="width: 45%; height: 300px;display: inline-block;"></div><br><br>
-<div id="chartContainer3" style="height: 300px; width: 100%;"></div>
+<div id="chartContainer3" style="height: 300px; width: 100%;"></div><br><br><br>
+<div id="chartContainer4" style="height: 300px; width: 100%;"></div><br><br><br>
+<div id="chartContainer5" style="height: 300px; width: 100%;"></div><br><br><br>
 <body>
 <!--<h2>Welcome to Django!!!</h2>-->
 <!--<h3>My Name is: {{ data_points }}</h3>-->
@@ -32,6 +34,8 @@
     var line_data_points_js = {{ line_data_points | js }};
     var pie_data_points_js = {{ pie_data_points | js }};
     var multiline_points_js = {{ multiline_points | js }};
+    var multiline_points_filled_js = {{ multiline_points_filled | js }};
+    var stacked_chart_js = {{ stacked_chart | js }};
 
 
 var chart = new CanvasJS.Chart("chartContainer",
@@ -90,6 +94,60 @@ var chart = new CanvasJS.Chart("chartContainer3", {
 	data: multiline_points_js
 });
 chart.render();
+
+
+var chart = new CanvasJS.Chart("chartContainer4", {
+	animationEnabled: true,
+	title: {
+		text: "Daily Email Analysis"
+	},
+	axisY: {
+		title: "Number of Messages"
+	},
+	legend: {
+		verticalAlign: "top",
+		horizontalAlign: "right",
+		dockInsidePlotArea: true
+	},
+	toolTip: {
+		shared: true
+	},
+	data: multiline_points_filled_js
+});
+chart.render();
+
+var chart = new CanvasJS.Chart("chartContainer5", {
+	animationEnabled: true,
+	title:{
+		text: "Evening Sales in a Restaurant"
+	},
+	axisX: {
+		valueFormatString: "DDD"
+	},
+	axisY: {
+		prefix: "$"
+	},
+	toolTip: {
+		shared: true
+	},
+	legend:{
+		cursor: "pointer",
+		itemclick: toggleDataSeries
+	},
+	data: stacked_chart_js
+});
+chart.render();
+
+function toggleDataSeries(e) {
+	if(typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
+		e.dataSeries.visible = false;
+	}
+	else {
+		e.dataSeries.visible = true;
+	}
+	chart.render();
+}
+
 function toogleDataSeries(e){
 	if (typeof(e.dataSeries.visible) === "undefined" || e.dataSeries.visible) {
 		e.dataSeries.visible = false;
@@ -98,7 +156,6 @@ function toogleDataSeries(e){
 	}
 	chart.render();
 }
-
 }
 
 </script>

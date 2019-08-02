@@ -36,7 +36,7 @@ def get_line_data_points_deep(deep_data, timeline):
             line_data_points_obj["label"] = str(df_data.year)
         line_data_points_obj["org_val"] = df_data
         data[line_data_points_obj["name_of_table"]].append(line_data_points_obj)
-    final_data = []
+    final_data, final_data1, final_data2 = [], [], []
     for key in data.keys():
         data_obj = data[key]
         data_obj.sort(key=lambda x: x['org_val'])
@@ -44,8 +44,14 @@ def get_line_data_points_deep(deep_data, timeline):
             obj.pop("org_val", None)
         final_data_obj = {"type": "line", "name": key, "showInLegend": True, "axisYType": "secondary",
                           "markerSize": 0, "dataPoints": data_obj}
+        final_data_obj1 = {"type": "area", "name": key, "showInLegend": True, "axisYType": "secondary",
+                           "markerSize": 0, "legendMarkerType": "square", "dataPoints": data_obj}
+        final_data_obj2 = {"type": "stackedBar", "name": key, "showInLegend": True, "axisYType": "secondary",
+                           "markerSize": 0, "legendMarkerType": "square", "dataPoints": data_obj}
         final_data.append(final_data_obj)
-    return final_data
+        final_data1.append(final_data_obj1)
+        final_data2.append(final_data_obj2)
+    return final_data, final_data1, final_data2
 
 
 def get_accounts_data(days, type):
@@ -68,10 +74,11 @@ def get_accounts_data(days, type):
     line_data_points_deep = TotalStats.objects.filter(category="accounts", date_created__gte=days).annotate(month=func('date_created')).values('month', 'name_of_table') \
                             .annotate(y=Sum('create_count'))
     print(line_data_points_deep)
-    line_data_points_deep = get_line_data_points_deep(line_data_points_deep, type)
+    line_data_points_deep, line_data_points_deep1, line_data_points_deep2 = get_line_data_points_deep(line_data_points_deep, type)
 
     return {"pie_data_points": pie_data_points, "line_data_points": line_data_points,
-            "multiline_points": line_data_points_deep}
+            "multiline_points": line_data_points_deep, "multiline_points_filled": line_data_points_deep1,
+            "stacked_chart": line_data_points_deep2}
 
 
 def index(request):
@@ -88,5 +95,5 @@ def index(request):
     else:
         time_diff = date.today() - timedelta(days=7)
     data = get_accounts_data(time_diff, timeline)
-    template = loader.get_template('index.html')
+    template = loader.get_template('index_new.html')
     return HttpResponse(template.render(data))
