@@ -10,6 +10,7 @@
     </style>
 </head>
 <script type="text/javascript" src="https://canvasjs.com/assets/script/canvasjs.min.js"></script>
+<div>
 <h1 style="color:blue;"><b><u>Accounts Data</u></b>
 <select style="width:200px;float:right;height:30px;margin-right:20%;" onchange="this.options[this.selectedIndex].value && (window.location = this.options[this.selectedIndex].value);">
     <option value="">select</option>
@@ -19,11 +20,19 @@
     <option value="http://localhost:8000/app/v1.0/index/?timeline=year">year wise</option>
 </select>
 </h1>
+    <div id="chartContainer" style="width: 45%; height: 300px;display: inline-block;"></div>
+<div id="chartContainer2" style="width: 45%; height: 300px;display: inline-block;"></div><br><br><br><br><br>
+<div id="chartContainer3" style="height: 300px; width: 100%;"></div><br><br><br><br>
+</div>
 
-<div id="chartContainer" style="width: 45%; height: 300px;display: inline-block;"></div>
-<div id="chartContainer2" style="width: 45%; height: 300px;display: inline-block;"></div><br><br>
-<div id="chartContainer3" style="height: 300px; width: 100%;"></div><br><br><br>
-<div id="chartContainer4" style="height: 300px; width: 100%;"></div><br><br><br>
+<div>
+<h1 style="color:blue;"><b><u>Rolodex Data</u></b>
+</h1>
+    <div id="chartContainer4" style="width: 45%; height: 300px;display: inline-block;"></div>
+    <div id="chartContainer5" style="width: 45%; height: 300px;display: inline-block;"></div><br><br><br><br><br>
+    <div id="chartContainer6" style="height: 300px; width: 100%;"></div><br><br><br><br><br><br>
+    <div id="chartContainer7" style="height: 300px; width: 100%;"></div><br><br><br>
+</div>
 <body>
 <!--<h2>Welcome to Django!!!</h2>-->
 <!--<h3>My Name is: {{ data_points }}</h3>-->
@@ -32,9 +41,12 @@
 <script type="text/javascript">
     var line_data_points_js = {{ line_data_points | js }};
     var pie_data_points_js = {{ pie_data_points | js }};
-    var multiline_points_js = {{ multiline_points | js }};
+    var rolodex_line_data_points_js = {{ rolodex_line_data_points | js }};
+    var rolodex_pie_data_points_js = {{ rolodex_pie_data_points | js }};
     var multiline_points_filled_js = {{ multiline_points_filled | js }};
-    var stacked_chart_js = {{ stacked_chart | js }};
+    var multiline_points_filled_js = {{ multiline_points_filled | js }};
+    var rolodex_data_filled_js = {{ rolodex_data_filled | js }};
+    var rolodex_multiline_points_filled_js = {{ rolodex_multiline_points_filled | js }};
 
 
 var chart = new CanvasJS.Chart("chartContainer",
@@ -72,30 +84,45 @@ var chart = new CanvasJS.Chart("chartContainer2",
         ]
     });
 chart.render();
-window.onload = function () {
-var chart = new CanvasJS.Chart("chartContainer3", {
-	title: {
-		text: "Overall Data"
-	},
-	axisY2: {
-		includeZero: false
-	},
-	toolTip: {
-		shared: true
-	},
-	legend: {
-		cursor: "pointer",
-		verticalAlign: "top",
-		horizontalAlign: "center",
-		dockInsidePlotArea: true,
-		itemclick: toogleDataSeries
-	},
-	data: multiline_points_js
-});
+
+var chart = new CanvasJS.Chart("chartContainer4",
+    {
+        animationEnabled: true,
+        title: {
+            text: "Line Chart"
+        },
+        credits: { enabled:false},
+        axisY: {
+            includeZero: false
+        },
+        data: [
+        {
+          type: "line",
+          dataPoints: rolodex_line_data_points_js
+        }
+        ]
+    });
 chart.render();
 
+var chart = new CanvasJS.Chart("chartContainer5",
+    {
+        animationEnabled: true,
+        title: {
+            text: "Pie Chart",
+        },
+        credits: { enabled:false},
+        data: [
+        {
+            type: "pie",
+            showInLegend: true,
+            dataPoints: rolodex_pie_data_points_js
+        },
+        ]
+    });
+chart.render();
 
-var chart = new CanvasJS.Chart("chartContainer4", {
+window.onload = function () {
+var chart = new CanvasJS.Chart("chartContainer3", {
 	animationEnabled: true,
 	title: {
 		text: "Account Data Analysis"
@@ -112,6 +139,46 @@ var chart = new CanvasJS.Chart("chartContainer4", {
 		shared: true
 	},
 	data: multiline_points_filled_js
+});
+chart.render();
+
+var chart = new CanvasJS.Chart("chartContainer6", {
+	animationEnabled: true,
+	title: {
+		text: "Rolodex Data Analysis"
+	},
+	axisY: {
+		title: "Number of Messages"
+	},
+	legend: {
+		verticalAlign: "top",
+		horizontalAlign: "right",
+		dockInsidePlotArea: true
+	},
+	toolTip: {
+		shared: true
+	},
+	data: rolodex_data_filled_js
+});
+chart.render();
+
+var chart = new CanvasJS.Chart("chartContainer7", {
+	animationEnabled: true,
+	title: {
+		text: "Executive Data Analysis"
+	},
+	axisY: {
+		title: "Number of Messages"
+	},
+	legend: {
+		verticalAlign: "top",
+		horizontalAlign: "right",
+		dockInsidePlotArea: true
+	},
+	toolTip: {
+		shared: true
+	},
+	data: rolodex_multiline_points_filled_js
 });
 chart.render();
 

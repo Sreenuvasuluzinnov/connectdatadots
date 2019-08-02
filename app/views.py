@@ -3,7 +3,7 @@ from django.template import loader
 from django.http import HttpResponse
 from datetime import date, timedelta
 from app.models import TotalStats
-from django.db.models import Sum
+from django.db.models import Sum, Q
 from django.db.models import F
 from django.db.models.functions import TruncMonth, TruncDay, TruncYear
 
@@ -36,49 +36,67 @@ def get_line_data_points_deep(deep_data, timeline):
             line_data_points_obj["label"] = str(df_data.year)
         line_data_points_obj["org_val"] = df_data
         data[line_data_points_obj["name_of_table"]].append(line_data_points_obj)
-    final_data, final_data1, final_data2 = [], [], []
+    final_data = []
     for key in data.keys():
         data_obj = data[key]
         data_obj.sort(key=lambda x: x['org_val'])
         for obj in data_obj:
             obj.pop("org_val", None)
-        final_data_obj = {"type": "line", "name": key, "showInLegend": True, "axisYType": "secondary",
-                          "markerSize": 0, "dataPoints": data_obj}
-        final_data_obj1 = {"type": "area", "name": key, "showInLegend": True, "axisYType": "secondary",
-                           "markerSize": 0, "legendMarkerType": "square", "dataPoints": data_obj}
-        final_data_obj2 = {"type": "stackedBar", "name": key, "showInLegend": True, "axisYType": "secondary",
+        final_data_obj = {"type": "area", "name": key, "showInLegend": True, "axisYType": "secondary",
                            "markerSize": 0, "legendMarkerType": "square", "dataPoints": data_obj}
         final_data.append(final_data_obj)
-        final_data1.append(final_data_obj1)
-        final_data2.append(final_data_obj2)
-    return final_data, final_data1, final_data2
+    return final_data
 
 
-def get_accounts_data(days, type):
-    pie_data_points = TotalStats.objects.filter(category="accounts", date_created__gte=days)\
-        .values(indexLabel=F('name_of_table')).annotate(y=Sum('create_count'))
+def line_data_points_qs(category, name_of_table, days, type):
+     line_data_points = TotalStats.objects.filter(category=category, date_created__gte=days,
+                                                  name_of_table=name_of_table)
+     func = {"week": TruncDay, "30days": TruncDay, "month": TruncMonth, "year": TruncYear}
+     func = func[type]
+     line_data_points = list(line_data_points.annotate(month=func('date_created')).values('month')
+                             .annotate(y=Sum('create_count')))
+     line_data_points = get_line_data_points(line_data_points, type)
+     for line_data_points_obj in line_data_points:
+         line_data_points_obj.pop("org_val", None)
+     return line_data_points
+
+
+def get_pie_data_points(category, days):
+    pie_data_points = TotalStats.objects.filter(category=category, date_created__gte=days).exclude(name_of_table__in=["Mongo Executives", "Gateway Executives"])
+    pie_data_points = pie_data_points.values(indexLabel=F('name_of_table')).annotate(y=Sum('create_count'))
     pie_data_points = list(pie_data_points)
     for pie_data_point_obj in pie_data_points:
         pie_data_point_obj["legendText"] = pie_data_point_obj["indexLabel"].title()
+    return pie_data_points
 
-    line_data_points = TotalStats.objects.filter(category="accounts", date_created__gte=days,
-                                                 name_of_table="universe_accounts")
+
+def get_accounts_data(days, type):
     func = {"week": TruncDay, "30days": TruncDay, "month": TruncMonth, "year": TruncYear}
     func = func[type]
-    line_data_points = list(line_data_points.annotate(month=func('date_created')).values('month') \
-                            .annotate(y=Sum('create_count')))
-    line_data_points = get_line_data_points(line_data_points, type)
-    for line_data_points_obj in line_data_points:
-        line_data_points_obj.pop("org_val", None)
+
+    pie_data_points = get_pie_data_points("accounts", days)
+    rolodex_pie_data_points = get_pie_data_points("rolodex", days)
+    line_data_points = line_data_points_qs("accounts", "Accounts", days, type)
+    rolodex_line_data_points = line_data_points_qs("rolodex", "App Executives", days, type)
 
     line_data_points_deep = TotalStats.objects.filter(category="accounts", date_created__gte=days).annotate(month=func('date_created')).values('month', 'name_of_table') \
                             .annotate(y=Sum('create_count'))
-    print(line_data_points_deep)
-    line_data_points_deep, line_data_points_deep1, line_data_points_deep2 = get_line_data_points_deep(line_data_points_deep, type)
 
+    rolodex_data_deep = TotalStats.objects.filter(
+        category="rolodex", name_of_table__in=["Mongo Executives", "Gateway Executives", "App Executives"]).filter(date_created__gte=days)\
+        .annotate(month=func('date_created')).values('month', 'name_of_table').annotate(y=Sum('create_count'))
+
+    rolodex_data_filled = TotalStats.objects.exclude(name_of_table__in=["Mongo Executives", "Gateway Executives"])
+    rolodex_data_filled = rolodex_data_filled.filter(category="rolodex").filter(date_created__gte=days)\
+        .annotate(month=func('date_created')).values('month', 'name_of_table').annotate(y=Sum('create_count'))
+    rolodex_data_filled = get_line_data_points_deep(rolodex_data_filled, type)
+
+    rolodex_points_deep = get_line_data_points_deep(rolodex_data_deep, type)
+    line_data_points_deep = get_line_data_points_deep(line_data_points_deep, type)
     return {"pie_data_points": pie_data_points, "line_data_points": line_data_points,
-            "multiline_points": line_data_points_deep, "multiline_points_filled": line_data_points_deep1,
-            "stacked_chart": line_data_points_deep2}
+            "multiline_points_filled": line_data_points_deep, "rolodex_multiline_points_filled": rolodex_points_deep,
+            "rolodex_line_data_points": rolodex_line_data_points, "rolodex_pie_data_points": rolodex_pie_data_points,
+            "rolodex_data_filled": rolodex_data_filled}
 
 
 def index(request):
